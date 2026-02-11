@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Crop Price Forecast</title>
+</head>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<body>
+
+<h2>AI-Powered Crop Price Forecasting System</h2>
+
+<form action="/predict" method="POST">
+
+    <label>Crop:</label>
+    <select name="crop">
+        <option value="maize">Maize</option>
+        <option value="beans">Beans</option>
+        <option value="tomatoes">Tomatoes</option>
+    </select><br><br>
+
+    <label>Market:</label>
+    <select name="market">
+        <option value="Embu">Embu</option>
+        <option value="Meru">Meru</option>
+        <option value="Nairobi">Nairobi</option>
+    </select><br><br>
+
+    <label>Rainfall:</label>
+    <input type="number" step="any" name="rainfall" required><br><br>
+
+    <label>Temperature:</label>
+    <input type="number" step="any" name="temperature" required><br><br>
+
+    <label>Month:</label>
+    <input type="number" name="month" min="1" max="12" required><br><br>
+
+    <label>Year:</label>
+    <input type="number" name="year" required><br><br>
+
+    <button type="submit">Predict Price</button>
+
+</form>
+
+{% if prediction %}
+    <h3>Predicted Price: KES {{ prediction }}</h3>
+{% endif %}
+
+{% if graph %}
+    <h3>Historical Price Trend</h3>
+    <img src="{{ url_for('static', filename='price_trend.png') }}" width="600">
+{% endif %}
+
+</body>
+</html>

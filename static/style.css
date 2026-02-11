@@ -1,0 +1,134 @@
+/* -----------------------------
+  Reset some default styles
+------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* -----------------------------
+  Body and Layout
+------------------------------- */
+body {
+    background: #f4f7f8;
+    color: #333;
+    line-height: 1.6;
+    font-size: 16px;
+    min-height: 100vh;
+}
+
+/* -----------------------------
+  Header / Navbar
+------------------------------- */
+header {
+    background: #0f4c81;
+    color: white;
+    padding: 20px 40px;
+    text-align: center;
+    font-size: 1.8em;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* -----------------------------
+  Container for content
+------------------------------- */
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* -----------------------------
+  Forms & Inputs
+------------------------------- */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+select, input[type="text"], input[type="number"] {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border 0.3s;
+}
+
+select:focus, input:focus {
+    border-color: #0f4c81;
+    outline: none;
+}
+
+/* -----------------------------
+  Buttons
+------------------------------- */
+button {
+    padding: 10px 20px;
+    background: #0f4c81;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s, transform 0.2s;
+}
+
+button:hover {
+    background: #062d50;
+    transform: translateY(-2px);
+}
+
+/* -----------------------------
+  Prediction & Info Box
+------------------------------- */
+.prediction {
+    padding: 15px 20px;
+    background: #e3f2fd;
+    border-left: 5px solid #0f4c81;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* -----------------------------
+  Price Trend Chart
+------------------------------- */
+#chart-container {
+    margin-top: 30px;
+}
+
+canvas {
+    max-width: 100%;
+    border-radius: 10px;
+}
+
+/* -----------------------------
+  Footer
+------------------------------- */
+footer {
+    text-align: center;
+    padding: 15px 0;
+    background: #0f4c81;
+    color: white;
+    margin-top: 40px;
+    border-radius: 0 0 10px 10px;
+}
+
+/* -----------------------------
+  Responsive
+------------------------------- */
+@media (max-width: 768px) {
+    form {
+        flex-direction: column;
+    }
+}
