@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crop Price Trends</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Crop Price Trends</h1>
+
+    <form method="POST">
+        <label for="crop">Select Crop:</label>
+        <select name="crop" required>
+            {% for crop in crops %}
+            <option value="{{ crop }}">{{ crop }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="market">Select Market:</label>
+        <select name="market" required>
+            {% for market in markets %}
+            <option value="{{ market }}">{{ market }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Show Trends</button>
+    </form>
+
+    {% if trend_data %}
+    <h2>Price Trends for {{ trend_data.crop }} in {{ trend_data.market }}</h2>
+    <canvas id="trendChart" width="800" height="400"></canvas>
+    <script>
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        const trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ trend_data.dates | safe }},
+                datasets: [{
+                    label: 'Price (KSh)',
+                    data: {{ trend_data.prices | safe }},
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    title: { display: true, text: 'Crop Price Trends' }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: { title: { display: true, text: 'Price (KSh)' } }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

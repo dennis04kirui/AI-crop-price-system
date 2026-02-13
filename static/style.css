@@ -1,134 +1,87 @@
-/* -----------------------------
-  Reset some default styles
-------------------------------- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* -----------------------------
-  Body and Layout
-------------------------------- */
 body {
-    background: #f4f7f8;
-    color: #333;
-    line-height: 1.6;
-    font-size: 16px;
-    min-height: 100vh;
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #eef2f3, #d9e4f5);
 }
 
-/* -----------------------------
-  Header / Navbar
-------------------------------- */
-header {
-    background: #0f4c81;
-    color: white;
-    padding: 20px 40px;
-    text-align: center;
-    font-size: 1.8em;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-/* -----------------------------
-  Container for content
-------------------------------- */
-.container {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-/* -----------------------------
-  Forms & Inputs
-------------------------------- */
-form {
+.navbar {
+    background: #0f172a;
+    padding: 15px 50px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
+    justify-content: space-between;
+    align-items: center;
 }
 
-select, input[type="text"], input[type="number"] {
-    flex: 1;
-    padding: 10px 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1em;
-    transition: border 0.3s;
+.logo {
+    color: #38bdf8;
+    font-size: 20px;
+    font-weight: bold;
 }
 
-select:focus, input:focus {
-    border-color: #0f4c81;
-    outline: none;
+.nav-links {
+    list-style: none;
+    display: flex;
 }
 
-/* -----------------------------
-  Buttons
-------------------------------- */
-button {
-    padding: 10px 20px;
-    background: #0f4c81;
+.nav-links li {
+    margin-left: 20px;
+}
+
+.nav-links a {
+    text-decoration: none;
     color: white;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    color: #38bdf8;
+}
+
+.btn-register {
+    background: #38bdf8;
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: black !important;
+}
+
+.main-content {
+    padding: 60px;
+    text-align: center;
+}
+
+.hero {
+    margin-top: 80px;
+}
+
+.hero h1 {
+    font-size: 42px;
+    color: #0f172a;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #334155;
+    margin: 20px 0;
+}
+
+.hero button {
+    background: #2563eb;
+    color: white;
+    padding: 12px 25px;
     border: none;
     border-radius: 8px;
+    font-size: 16px;
     cursor: pointer;
-    font-size: 1em;
-    transition: background 0.3s, transform 0.2s;
 }
 
-button:hover {
-    background: #062d50;
-    transform: translateY(-2px);
+.hero button:hover {
+    background: #1e40af;
 }
 
-/* -----------------------------
-  Prediction & Info Box
-------------------------------- */
-.prediction {
-    padding: 15px 20px;
-    background: #e3f2fd;
-    border-left: 5px solid #0f4c81;
-    border-radius: 8px;
-    margin-top: 15px;
-    font-weight: bold;
-    font-size: 1.1em;
-}
-
-/* -----------------------------
-  Price Trend Chart
-------------------------------- */
-#chart-container {
-    margin-top: 30px;
-}
-
-canvas {
-    max-width: 100%;
-    border-radius: 10px;
-}
-
-/* -----------------------------
-  Footer
-------------------------------- */
 footer {
-    text-align: center;
-    padding: 15px 0;
-    background: #0f4c81;
+    background: #0f172a;
     color: white;
-    margin-top: 40px;
-    border-radius: 0 0 10px 10px;
-}
-
-/* -----------------------------
-  Responsive
-------------------------------- */
-@media (max-width: 768px) {
-    form {
-        flex-direction: column;
-    }
+    padding: 15px;
+    text-align: center;
+    margin-top: 50px;
 }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crop Price Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+        h2 { text-align: center; color: #333; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        button { margin-top: 20px; padding: 12px; width: 100%; background-color: #28a745; color: white; border: none; font-size: 16px; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .prediction { margin-top: 20px; font-size: 18px; font-weight: bold; text-align: center; color: #155724; background: #d4edda; padding: 15px; border-radius: 5px; }
+        .logout { text-align: right; margin-bottom: 10px; }
+        .logout a { text-decoration: none; color: #dc3545; font-weight: bold; }
+        .flash { padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .flash-success { background-color: #d4edda; color: #155724; }
+        .flash-danger { background-color: #f8d7da; color: #721c24; }
+        .flash-warning { background-color: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="logout">
+            Logged in as {{ session['user'] }} | <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+
+        <h2>Predict Crop Price</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('predict') }}">
+
+            <label for="crop">Select Crop</label>
+            <select name="crop" id="crop" required>
+                {% for c in crops %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="market">Select Market</label>
+            <select name="market" id="market" required>
+                {% for m in markets %}
+                <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="rainfall">Rainfall (mm)</label>
+            <input type="number" step="0.1" name="rainfall" id="rainfall" placeholder="e.g., 120.5" required>
+
+            <label for="temperature">Temperature (°C)</label>
+            <input type="number" step="0.1" name="temperature" id="temperature" placeholder="e.g., 25.3" required>
+
+            <label for="date">Date of Prediction</label>
+            <input type="date" name="date" id="date" required>
+
+            <button type="submit">Predict Price</button>
+
+        </form>
+
+        {% if prediction %}
+        <div class="prediction">
+            Predicted Price: KES {{ prediction }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

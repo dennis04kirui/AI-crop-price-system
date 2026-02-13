@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compare Crop Prices</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Compare Crop Prices</h1>
+
+    <form method="POST">
+        <label for="crop1">Select Crop 1:</label>
+        <select name="crop1" required>
+            {% for crop in crops %}
+            <option value="{{ crop }}">{{ crop }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="crop2">Select Crop 2:</label>
+        <select name="crop2" required>
+            {% for crop in crops %}
+            <option value="{{ crop }}">{{ crop }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="market">Select Market:</label>
+        <select name="market" required>
+            {% for market in markets %}
+            <option value="{{ market }}">{{ market }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Compare</button>
+    </form>
+
+    {% if compare_data %}
+    <h2>Price Comparison for {{ compare_data.crop1 }} vs {{ compare_data.crop2 }} in {{ compare_data.market }}</h2>
+    <canvas id="compareChart" width="800" height="400"></canvas>
+    <script>
+        const ctx = document.getElementById('compareChart').getContext('2d');
+        const compareChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ compare_data.dates | safe }},
+                datasets: [
+                    {
+                        label: '{{ compare_data.crop1 }}',
+                        data: {{ compare_data.crop1_prices | safe }},
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.3
+                    },
+                    {
+                        label: '{{ compare_data.crop2 }}',
+                        data: {{ compare_data.crop2_prices | safe }},
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    title: { display: true, text: 'Crop Price Comparison' }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: { title: { display: true, text: 'Price (KSh)' } }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>
