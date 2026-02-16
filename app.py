@@ -1,212 +1,260 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-import sqlite3
-import joblib
+from flask import Flask, render_template, redirect, url_for, request, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField
+from wtforms.validators import DataRequired, Length, EqualTo
+from wtforms.widgets import NumberInput
 import pandas as pd
-from datetime import datetime
-from sklearn.preprocessing import LabelEncoder
+import matplotlib
+matplotlib.use('Agg')  # non-GUI backend for Flask
+import matplotlib.pyplot as plt
+import io
+import base64
+import os
+from sklearn.linear_model import LinearRegression
 
-# -----------------------------
-# Flask setup
-# -----------------------------
+# -------------------------
+# App Config
+# -------------------------
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"  # Replace with a strong secret
+app.config['SECRET_KEY'] = 'super_secret_key_change_this'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# -----------------------------
-# Load ML model and encoders
-# -----------------------------
-MODEL_FILE = "models/model.pkl"
-FEATURES_FILE = "models/features.pkl"
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
 
-model = joblib.load(MODEL_FILE)
-features_data = joblib.load(FEATURES_FILE)  # tuple (encoders, date_min)
-encoders, date_min = features_data
+# -------------------------
+# User Model
+# -------------------------
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(150), nullable=False)
 
-# Get lists of crops and markets for dropdowns
-crops_list = encoders['crop'].classes_.tolist()
-markets_list = encoders['market'].classes_.tolist()
+# -------------------------
+# Forms
+# -------------------------
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=25)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password',
+                                     validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
 
-# -----------------------------
-# Database setup
-# -----------------------------
-DB_FILE = "users.db"
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
+class PredictForm(FlaskForm):
+    crop = SelectField('Crop', validators=[DataRequired()], choices=[])
+    county = SelectField('County', validators=[DataRequired()], choices=[])
+    year = IntegerField('Year', validators=[DataRequired()], widget=NumberInput())
+    submit = SubmitField('Predict')
 
-init_db()
+# -------------------------
+# Load CSV Safely
+# -------------------------
+csv_path = os.path.join("data", "crop_prices_full.csv")
+if not os.path.exists(csv_path):
+    raise FileNotFoundError("CSV file not found inside data folder!")
 
-# -----------------------------
-# Home page
-# -----------------------------
+df = pd.read_csv(csv_path)
+df.columns = df.columns.str.lower()
+
+required_cols = ['date', 'market', 'crop', 'price']
+for col in required_cols:
+    if col not in df.columns:
+        raise ValueError(f"Column '{col}' missing in CSV file!")
+
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df = df.dropna(subset=['date'])
+df['year'] = df['date'].dt.year
+
+df['county'] = df['market'].astype(str).str.title()
+df['crop'] = df['crop'].astype(str).str.title()
+df = df.dropna(subset=['price'])
+
+# Dropdown values
+crops = sorted(df['crop'].unique())
+counties = sorted(df['county'].unique())
+years = sorted(df['year'].unique())
+
+# -------------------------
+# Login Manager
+# -------------------------
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# -------------------------
+# Routes
+# -------------------------
 @app.route('/')
 def home():
-    return render_template("home.html")
+    return render_template('home.html')
 
-# -----------------------------
-# Register page
-# -----------------------------
+# -------------------------
+# Register
+# -------------------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        try:
-            conn = sqlite3.connect(DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-            conn.commit()
-            conn.close()
-            flash("Registered successfully! Please login.", "success")
+    form = RegisterForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(username=form.username.data).first():
+            flash('Username already exists', 'danger')
+        else:
+            user = User(username=form.username.data, password=form.password.data)
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            flash("Username already exists!", "danger")
-            return redirect(url_for('register'))
-    return render_template("register.html")
+    return render_template('register.html', form=form)
 
-# -----------------------------
-# Login page
-# -----------------------------
+# -------------------------
+# Login
+# -------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        user = cursor.fetchone()
-        conn.close()
-        if user:
-            session['user'] = username
-            flash("Logged in successfully!", "success")
-            return redirect(url_for('predict_page'))
-        else:
-            flash("Invalid credentials!", "danger")
-            return redirect(url_for('login'))
-    return render_template("login.html")
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.password == form.password.data:
+            login_user(user)
+            return redirect(url_for('predict'))
+        flash('Invalid username or password', 'danger')
+    return render_template('login.html', form=form)
 
-# -----------------------------
+# -------------------------
 # Logout
-# -----------------------------
+# -------------------------
 @app.route('/logout')
+@login_required
 def logout():
-    session.pop('user', None)
-    flash("Logged out successfully!", "success")
+    logout_user()
+    flash('Logged out successfully', 'success')
     return redirect(url_for('home'))
 
-# -----------------------------
-# Prediction page
-# -----------------------------
-@app.route('/predict_page')
-def predict_page():
-    if 'user' not in session:
-        flash("Please login first to predict!", "warning")
-        return redirect(url_for('login'))
-    return render_template("predict.html", crops=crops_list, markets=markets_list)
-
-# -----------------------------
-# Prediction logic
-# -----------------------------
-@app.route('/predict', methods=['POST'])
+# -------------------------
+# Predict
+# -------------------------
+@app.route('/predict', methods=['GET', 'POST'])
+@login_required
 def predict():
-    if 'user' not in session:
-        flash("Please login first to predict!", "warning")
-        return redirect(url_for('login'))
+    form = PredictForm()
+    form.crop.choices = [(c, c) for c in crops]
+    form.county.choices = [(c, c) for c in counties]
 
-    crop = request.form['crop']
-    market = request.form['market']
-    rainfall = float(request.form['rainfall'])
-    temperature = float(request.form['temperature'])
-    date_str = request.form['date']  # expects dd/mm/yyyy
+    price_prediction = None
+    if form.validate_on_submit():
+        try:
+            crop_input = form.crop.data
+            county_input = form.county.data
+            year_input = int(form.year.data)
 
-    # Convert date to numeric
-    date = pd.to_datetime(date_str, dayfirst=True)
-    date_numeric = (date - date_min).days
+            # Filter historical data for the selected crop + county
+            df_subset = df[(df['crop'] == crop_input) & (df['county'] == county_input)]
 
-    # Encode categorical values
-    crop_encoded = encoders['crop'].transform([crop])[0]
-    market_encoded = encoders['market'].transform([market])[0]
+            if len(df_subset) >= 2:
+                X = df_subset[['year']]
+                y = df_subset['price']
+                model = LinearRegression()
+                model.fit(X, y)
+                price_prediction = round(model.predict([[year_input]])[0], 2)
+            else:
+                price_prediction = "Not enough historical data"
 
-    # Create input dataframe
-    input_data = pd.DataFrame([[date_numeric, crop_encoded, market_encoded, rainfall, temperature]],
-                              columns=['date', 'crop', 'market', 'rainfall', 'temperature'])
+        except Exception as e:
+            print("Prediction error:", e)
+            price_prediction = "Prediction failed. Check input."
 
-    prediction = model.predict(input_data)[0]
+    return render_template('predict.html', form=form, price=price_prediction)
 
-    return render_template("predict.html", crops=crops_list, markets=markets_list,
-                           prediction=round(prediction, 2))
-
-# -----------------------------
-# Trends page
-# -----------------------------
+# -------------------------
+# Trends
+# -------------------------
 @app.route('/trends', methods=['GET', 'POST'])
+@login_required
 def trends():
-    if 'user' not in session:
-        flash("Please login first to view trends!", "warning")
-        return redirect(url_for('login'))
+    selected_crop = request.form.get('crop') or crops[0]
+    selected_county = request.form.get('county') or counties[0]
 
-    trend_data = None
-    if request.method == 'POST':
-        crop = request.form['crop']
-        market = request.form['market']
+    filtered = df[(df['crop'] == selected_crop) & (df['county'] == selected_county)]
+    chart_data = None
 
-        df = pd.read_csv("data/crop_prices.csv")
-        df_filtered = df[(df['crop'] == crop) & (df['market'] == market)]
-        df_filtered['date'] = pd.to_datetime(df_filtered['date'], dayfirst=True)
-        df_filtered = df_filtered.sort_values('date')
+    if not filtered.empty:
+        yearly = filtered.groupby('year')['price'].mean().reset_index()
+        plt.figure(figsize=(8,4))
+        plt.plot(yearly['year'], yearly['price'], marker='o')
+        plt.title(f'{selected_crop} Trend in {selected_county}')
+        plt.xlabel('Year')
+        plt.ylabel('Average Price')
+        plt.grid(True)
+        plt.tight_layout()
 
-        trend_data = {
-            'dates': df_filtered['date'].dt.strftime('%d/%m/%Y').tolist(),
-            'prices': df_filtered['price'].tolist(),
-            'crop': crop,
-            'market': market
-        }
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        chart_data = base64.b64encode(buf.getvalue()).decode()
+        plt.close()
 
-    return render_template("trends.html", crops=crops_list, markets=markets_list, trend_data=trend_data)
+    return render_template('trends.html',
+                           chart_data=chart_data,
+                           crops=crops,
+                           counties=counties,
+                           selected_crop=selected_crop,
+                           selected_county=selected_county)
 
-# -----------------------------
-# Compare page
-# -----------------------------
+# -------------------------
+# Compare
+# -------------------------
 @app.route('/compare', methods=['GET', 'POST'])
+@login_required
 def compare():
-    if 'user' not in session:
-        flash("Please login first to compare!", "warning")
-        return redirect(url_for('login'))
+    crop1 = request.form.get('crop1') or crops[0]
+    crop2 = request.form.get('crop2') or (crops[1] if len(crops) > 1 else crops[0])
+    selected_county = request.form.get('county') or counties[0]
 
-    compare_data = None
-    if request.method == 'POST':
-        crop1 = request.form['crop1']
-        crop2 = request.form['crop2']
-        market = request.form['market']
+    filtered1 = df[(df['crop'] == crop1) & (df['county'] == selected_county)]
+    filtered2 = df[(df['crop'] == crop2) & (df['county'] == selected_county)]
+    chart_data = None
 
-        df = pd.read_csv("data/crop_prices.csv")
-        df['date'] = pd.to_datetime(df['date'], dayfirst=True)
-        df1 = df[(df['crop'] == crop1) & (df['market'] == market)].sort_values('date')
-        df2 = df[(df['crop'] == crop2) & (df['market'] == market)].sort_values('date')
+    if not filtered1.empty and not filtered2.empty:
+        yearly1 = filtered1.groupby('year')['price'].mean().reset_index()
+        yearly2 = filtered2.groupby('year')['price'].mean().reset_index()
 
-        compare_data = {
-            'dates': df1['date'].dt.strftime('%d/%m/%Y').tolist(),
-            'crop1_prices': df1['price'].tolist(),
-            'crop2_prices': df2['price'].tolist(),
-            'crop1': crop1,
-            'crop2': crop2,
-            'market': market
-        }
+        plt.figure(figsize=(8,4))
+        plt.plot(yearly1['year'], yearly1['price'], marker='o', label=crop1)
+        plt.plot(yearly2['year'], yearly2['price'], marker='o', label=crop2)
+        plt.title(f'{crop1} vs {crop2} in {selected_county}')
+        plt.xlabel('Year')
+        plt.ylabel('Average Price')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
 
-    return render_template("compare.html", crops=crops_list, markets=markets_list, compare_data=compare_data)
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        chart_data = base64.b64encode(buf.getvalue()).decode()
+        plt.close()
 
-# -----------------------------
-# Run app
-# -----------------------------
-if __name__ == "__main__":
+    return render_template('compare.html',
+                           chart_data=chart_data,
+                           crops=crops,
+                           counties=counties,
+                           selected_crop1=crop1,
+                           selected_crop2=crop2,
+                           selected_county=selected_county)
+
+# -------------------------
+# Run App
+# -------------------------
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

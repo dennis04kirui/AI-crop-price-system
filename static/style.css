@@ -1,87 +1,22 @@
 body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(to right, #eef2f3, #d9e4f5);
+    background-color: #f8f9fa;
 }
 
-.navbar {
-    background: #0f172a;
-    padding: 15px 50px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.card {
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.logo {
-    color: #38bdf8;
-    font-size: 20px;
-    font-weight: bold;
+.btn-primary {
+    border-radius: 25px;
 }
 
-.nav-links {
-    list-style: none;
-    display: flex;
+.navbar-brand {
+    font-size: 1.3rem;
 }
 
-.nav-links li {
-    margin-left: 20px;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
-}
-
-.nav-links a:hover {
-    color: #38bdf8;
-}
-
-.btn-register {
-    background: #38bdf8;
-    padding: 8px 14px;
-    border-radius: 6px;
-    color: black !important;
-}
-
-.main-content {
-    padding: 60px;
-    text-align: center;
-}
-
-.hero {
-    margin-top: 80px;
-}
-
-.hero h1 {
-    font-size: 42px;
-    color: #0f172a;
-}
-
-.hero p {
-    font-size: 18px;
-    color: #334155;
-    margin: 20px 0;
-}
-
-.hero button {
-    background: #2563eb;
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.hero button:hover {
-    background: #1e40af;
-}
-
-footer {
-    background: #0f172a;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    margin-top: 50px;
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
 }

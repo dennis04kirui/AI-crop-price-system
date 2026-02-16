@@ -1,62 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Crop Price Trends</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <h1>Crop Price Trends</h1>
+{% extends "base.html" %}
 
-    <form method="POST">
-        <label for="crop">Select Crop:</label>
-        <select name="crop" required>
-            {% for crop in crops %}
-            <option value="{{ crop }}">{{ crop }}</option>
-            {% endfor %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-10 px-4">
+  <div class="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6">
+    <h2 class="text-2xl font-bold mb-6 text-center">Price Trends</h2>
+
+    <form method="POST" class="flex flex-col md:flex-row md:gap-4 mb-6">
+      <div class="flex-1 mb-4 md:mb-0">
+        <label class="block text-gray-700 font-semibold mb-1" for="crop">Select Crop</label>
+        <select name="crop" id="crop" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for c in crops %}
+            <option value="{{ c }}" {% if c == selected_crop %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
+      </div>
 
-        <label for="market">Select Market:</label>
-        <select name="market" required>
-            {% for market in markets %}
-            <option value="{{ market }}">{{ market }}</option>
-            {% endfor %}
+      <div class="flex-1 mb-4 md:mb-0">
+        <label class="block text-gray-700 font-semibold mb-1" for="county">Select County</label>
+        <select name="county" id="county" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for c in counties %}
+            <option value="{{ c }}" {% if c == selected_county %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
+      </div>
 
-        <button type="submit">Show Trends</button>
+      <div class="flex-1 md:flex-none">
+        <button type="submit" class="w-full bg-blue-500 text-white font-semibold p-2 rounded hover:bg-blue-600 transition-colors">Show Trends</button>
+      </div>
     </form>
 
-    {% if trend_data %}
-    <h2>Price Trends for {{ trend_data.crop }} in {{ trend_data.market }}</h2>
-    <canvas id="trendChart" width="800" height="400"></canvas>
-    <script>
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        const trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ trend_data.dates | safe }},
-                datasets: [{
-                    label: 'Price (KSh)',
-                    data: {{ trend_data.prices | safe }},
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: true },
-                    title: { display: true, text: 'Crop Price Trends' }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Date' } },
-                    y: { title: { display: true, text: 'Price (KSh)' } }
-                }
-            }
-        });
-    </script>
-    {% endif %}
-</body>
-</html>
+    <div class="overflow-x-auto">
+      <img src="data:image/png;base64,{{ chart_data }}" alt="Price Trends Chart" class="w-full h-auto rounded shadow-md">
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,78 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Compare Crop Prices</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <h1>Compare Crop Prices</h1>
+{% extends "base.html" %}
 
-    <form method="POST">
-        <label for="crop1">Select Crop 1:</label>
-        <select name="crop1" required>
-            {% for crop in crops %}
-            <option value="{{ crop }}">{{ crop }}</option>
-            {% endfor %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-10 px-4">
+  <div class="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6">
+    <h2 class="text-2xl font-bold mb-6 text-center">Compare Crop Prices</h2>
+
+    <form method="POST" class="flex flex-col md:flex-row md:gap-4 mb-6">
+      <div class="flex-1 mb-4 md:mb-0">
+        <label class="block text-gray-700 font-semibold mb-1" for="crop1">Crop 1</label>
+        <select name="crop1" id="crop1" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for c in crops %}
+            <option value="{{ c }}" {% if c == selected_crop1 %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
+      </div>
 
-        <label for="crop2">Select Crop 2:</label>
-        <select name="crop2" required>
-            {% for crop in crops %}
-            <option value="{{ crop }}">{{ crop }}</option>
-            {% endfor %}
+      <div class="flex-1 mb-4 md:mb-0">
+        <label class="block text-gray-700 font-semibold mb-1" for="crop2">Crop 2</label>
+        <select name="crop2" id="crop2" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for c in crops %}
+            <option value="{{ c }}" {% if c == selected_crop2 %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
+      </div>
 
-        <label for="market">Select Market:</label>
-        <select name="market" required>
-            {% for market in markets %}
-            <option value="{{ market }}">{{ market }}</option>
-            {% endfor %}
+      <div class="flex-1 mb-4 md:mb-0">
+        <label class="block text-gray-700 font-semibold mb-1" for="county">County</label>
+        <select name="county" id="county" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for c in counties %}
+            <option value="{{ c }}" {% if c == selected_county %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
         </select>
+      </div>
 
-        <button type="submit">Compare</button>
+      <div class="flex-1 md:flex-none">
+        <button type="submit" class="w-full bg-blue-500 text-white font-semibold p-2 rounded hover:bg-blue-600 transition-colors">Compare</button>
+      </div>
     </form>
 
-    {% if compare_data %}
-    <h2>Price Comparison for {{ compare_data.crop1 }} vs {{ compare_data.crop2 }} in {{ compare_data.market }}</h2>
-    <canvas id="compareChart" width="800" height="400"></canvas>
-    <script>
-        const ctx = document.getElementById('compareChart').getContext('2d');
-        const compareChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ compare_data.dates | safe }},
-                datasets: [
-                    {
-                        label: '{{ compare_data.crop1 }}',
-                        data: {{ compare_data.crop1_prices | safe }},
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        tension: 0.3
-                    },
-                    {
-                        label: '{{ compare_data.crop2 }}',
-                        data: {{ compare_data.crop2_prices | safe }},
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        tension: 0.3
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: true },
-                    title: { display: true, text: 'Crop Price Comparison' }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Date' } },
-                    y: { title: { display: true, text: 'Price (KSh)' } }
-                }
-            }
-        });
-    </script>
-    {% endif %}
-</body>
-</html>
+    <div class="overflow-x-auto">
+      <img src="data:image/png;base64,{{ chart_data }}" alt="Comparison Chart" class="w-full h-auto rounded shadow-md">
+    </div>
+  </div>
+</div>
+{% endblock %}
