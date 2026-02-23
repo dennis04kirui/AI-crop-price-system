@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired, Length, EqualTo
 from wtforms.widgets import NumberInput
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')  # non-GUI backend for Flask
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -57,7 +57,7 @@ class PredictForm(FlaskForm):
     submit = SubmitField('Predict')
 
 # -------------------------
-# Load CSV Safely
+# Load CSV
 # -------------------------
 csv_path = os.path.join("data", "crop_prices_full.csv")
 if not os.path.exists(csv_path):
@@ -79,10 +79,8 @@ df['county'] = df['market'].astype(str).str.title()
 df['crop'] = df['crop'].astype(str).str.title()
 df = df.dropna(subset=['price'])
 
-# Dropdown values
 crops = sorted(df['crop'].unique())
 counties = sorted(df['county'].unique())
-years = sorted(df['year'].unique())
 
 # -------------------------
 # Login Manager
@@ -150,13 +148,13 @@ def predict():
     form.county.choices = [(c, c) for c in counties]
 
     price_prediction = None
+
     if form.validate_on_submit():
         try:
             crop_input = form.crop.data
             county_input = form.county.data
             year_input = int(form.year.data)
 
-            # Filter historical data for the selected crop + county
             df_subset = df[(df['crop'] == crop_input) & (df['county'] == county_input)]
 
             if len(df_subset) >= 2:
@@ -164,7 +162,9 @@ def predict():
                 y = df_subset['price']
                 model = LinearRegression()
                 model.fit(X, y)
-                price_prediction = round(model.predict([[year_input]])[0], 2)
+
+                predicted_value = round(model.predict([[year_input]])[0], 2)
+                price_prediction = f"KSh {predicted_value:,.2f}"
             else:
                 price_prediction = "Not enough historical data"
 
@@ -192,7 +192,7 @@ def trends():
         plt.plot(yearly['year'], yearly['price'], marker='o')
         plt.title(f'{selected_crop} Trend in {selected_county}')
         plt.xlabel('Year')
-        plt.ylabel('Average Price')
+        plt.ylabel('Average Price (KSh)')
         plt.grid(True)
         plt.tight_layout()
 
@@ -232,7 +232,7 @@ def compare():
         plt.plot(yearly2['year'], yearly2['price'], marker='o', label=crop2)
         plt.title(f'{crop1} vs {crop2} in {selected_county}')
         plt.xlabel('Year')
-        plt.ylabel('Average Price')
+        plt.ylabel('Average Price (KSh)')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
